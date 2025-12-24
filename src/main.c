@@ -16,7 +16,12 @@ while(1) {
 
   // Remove the trailing newline
   input[strlen(input) - 1] = '\0';
+  if (strcmp(input, "exit") == 0){
+    break;
+  }
+  else{
   printf("%s: command not found\n", input);
+  }
 }
 return 0;
 }
