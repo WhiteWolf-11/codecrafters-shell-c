@@ -58,7 +58,7 @@ while(1) {
           printf("%s is %s\n", command, file_path);
         }
         else {
-          printf("%s: command not found\n", command);
+          printf("%s: not found\n", command);
       }
     }
   }
