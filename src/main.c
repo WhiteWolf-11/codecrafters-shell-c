@@ -107,11 +107,9 @@ while(1) {
         // If not found, print ONLY the command name followed by : command not found
         // The tester is very sensitive to spaces and extra characters!
         printf("%s: command not found\n", argv[0]);
-    }
-}
-    else{
-  printf("%s:command not found\n", input);
-  }
+     }
+ }
+    
 }
 
 return 0;
