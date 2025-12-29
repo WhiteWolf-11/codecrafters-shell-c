@@ -51,7 +51,7 @@ while(1) {
     token = strtok(NULL, " ");
   }
   argv[i] = NULL;
-  char *command = argv[0];
+  char *command = argv[1];
   if(argv[0]== NULL) continue;
 
   if (strcmp(argv[0], "exit") == 0){
