@@ -84,29 +84,35 @@ while(1) {
     }
   }
 
-  else{
-    char *full_path = file_path(command,res, &i);
+ else {
+    int found_executable = 0;
+    // Search for the command in PATH
+    file_path(argv[0], res, &found_executable);
 
-    if(full_path != NULL && i == 1){
-      pid_t pid = fork();
-      if (pid == 0){
-        if(execv(full_path, (char * const*)argv)== -1){
-          perror("execv");
-          exit(1);
+    if (found_executable == 1) {
+        pid_t pid = fork();
+        if (pid == 0) {
+            // Child process: execute the found path with the original argv
+            if (execv(res, (char * const*)argv) == -1) {
+                perror("execv");
+                exit(1);
+            }
+        } else if (pid < 0) {
+            perror("fork");
+        } else {
+            // Parent process: wait for the command to finish
+            wait(NULL);
         }
-      }
-      else if (pid < 0){
-        perror("fork");
-        exit(0);
-      }
-      else{
-        wait(NULL);
-      }
+    } else {
+        // If not found, print ONLY the command name followed by : command not found
+        // The tester is very sensitive to spaces and extra characters!
+        printf("%s: command not found\n", argv[0]);
     }
+}
     else{
   printf("%s:command not found\n", input);
   }
 }
-}
+
 return 0;
 }
