@@ -29,7 +29,7 @@ int main() {
   setbuf(stdout, NULL);
   char *argv[20];
   char res[1024];
-  char *bltin[50] = {"exit", "echo", "type"};
+  char *bltin[50] = {"exit", "echo", "type", "pwd"};
 
   while (1) {
     // TODO: Uncomment the code below to pass the first stage
@@ -64,7 +64,7 @@ int main() {
       
     } else if (strncmp(argv[0], "type", 4) == 0) {
       int flag = 0;
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 4; i++) {
         if (strcmp(argv[1], bltin[i]) == 0) {
           flag = 1;
         }
