@@ -66,7 +66,7 @@ int main() {
         }
       };
       if (flag == 1) {
-        printf("%s is a shell builtin\n", command);
+        printf("%s is a shell builtin\n", argv[1]);
       } else {
         char resolved_path[1024];
         file_path(argv[1], res, &flag);
