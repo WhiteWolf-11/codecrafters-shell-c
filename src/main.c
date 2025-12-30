@@ -82,12 +82,13 @@ int main() {
       }
     } else if (strncmp(argv[0], "pwd", 3) == 0 ){
       char *path = getenv("PATH");
-      strcpy(char path_copy, *path);
+      char *path_copy = strdup(path);
       char *token = strtok(path_copy,":" );
       while (token != NULL){
-        printf("/%s",token)
+        printf("/%s",token);
+        token = strtok(NULL, ":");
       }
-      printf("\n")
+      printf("\n");
     }else {
       int found_executable = 0;
       // Search for the command in PATH
