@@ -69,11 +69,11 @@ int main() {
         printf("%s is a shell builtin\n", command);
       } else {
         char resolved_path[1024];
-        file_path(command, res, &flag);
+        file_path(argv[1], res, &flag);
         if (flag == 1) {
-          printf("%s is %s\n", command, res);
+          printf("%s is %s\n", argv[1], res);
         } else {
-          printf("%s: not found\n", command);
+          printf("%s: not found\n", argv[1]);
         }
       }
     } else {
