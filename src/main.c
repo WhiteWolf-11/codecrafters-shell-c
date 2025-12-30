@@ -81,8 +81,8 @@ int main() {
         }
       }
     } else if (strncmp(argv[0], "pwd", 3) == 0 ){
-      char *cwd[1024];
-      if (getcwd(cwd, sizeof(cwd)) !+ NULL){
+      char cwd[1024];
+      if (getcwd(cwd, sizeof(cwd)) != NULL){
         printf("%s\n", cwd);
       }else{
         printf("Error retrieving current directory\n");
