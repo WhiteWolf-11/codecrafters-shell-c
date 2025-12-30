@@ -80,7 +80,15 @@ int main() {
           printf("%s: not found\n", argv[1]);
         }
       }
-    } else {
+    } else if (strncmp(argv[0], "pwd", 3) == 0 ){
+      char *path = getenv("PATH");
+      strcpy(char path_copy, *path);
+      char *token = strtok(path_copy,":" );
+      while (token != NULL){
+        printf("/%s",token)
+      }
+      printf("\n")
+    }else {
       int found_executable = 0;
       // Search for the command in PATH
       file_path(argv[0], res, &found_executable);
