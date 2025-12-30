@@ -60,6 +60,7 @@ int main() {
       for(int j = 1; argv[j] != NULL; j++){
         printf("%s%s", argv[j], (argv[j+1] == NULL) ? "" : " ");
       }
+      printf("\n");
       
     } else if (strncmp(argv[0], "type", 4) == 0) {
       int flag = 0;
