@@ -89,7 +89,7 @@ int main() {
       }
       
     }else if(strcmp(argv[0], "cd") == 0 ){
-      char *path = argv
+      char *path = argv[1];
       if (path == NULL || strcmp(path, "~") == 0) {
         path = getenv("HOME");
       }
