@@ -29,7 +29,7 @@ int main() {
   setbuf(stdout, NULL);
   char *argv[20];
   char res[1024];
-  char *bltin[50] = {"exit", "echo", "type", "pwd"};
+  char *bltin[50] = {"exit", "echo", "type", "pwd", "cd"};
 
   while (1) {
     // TODO: Uncomment the code below to pass the first stage
@@ -64,7 +64,7 @@ int main() {
       
     } else if (strncmp(argv[0], "type", 4) == 0) {
       int flag = 0;
-      for (int i = 0; i < 4; i++) {
+      for (int i = 0; i < 5; i++) {
         if (strcmp(argv[1], bltin[i]) == 0) {
           flag = 1;
         }
@@ -80,7 +80,7 @@ int main() {
           printf("%s: not found\n", argv[1]);
         }
       }
-    } else if (strncmp(argv[0], "pwd", 3) == 0 ){
+    } else if (strcmp(argv[0], "pwd") == 0 ){
       char cwd[1024];
       if (getcwd(cwd, sizeof(cwd)) != NULL){
         printf("%s\n", cwd);
@@ -88,7 +88,23 @@ int main() {
         printf("Error retrieving current directory\n");
       }
       
-    }else {
+    }else if(strcmp(argv[0], "cd") == 0 ){
+      char *path = argv
+      if (path == NULL || strcmp(path, "~") == 0) {
+        path = getenv("HOME");
+      }
+      if (chdir(path) == 0) {
+        char cwd[1024];
+        if (getcwd(cwd, sizeof(cwd)) != NULL) {
+          setenv("PWD", cwd, 1);
+        }
+      } else {
+        
+        printf("cd: no such file or directory: %s\n", path);
+      }
+      
+    }
+    else {
       int found_executable = 0;
       // Search for the command in PATH
       file_path(argv[0], res, &found_executable);
