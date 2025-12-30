@@ -57,7 +57,15 @@ int main() {
     if (strcmp(argv[0], "exit") == 0) {
       break;
     } else if (strncmp(argv[0], "echo", 4) == 0) {
-      printf("%s\n", argv[1]);
+      for(int j = 1; j <= i; j++){
+        if (argv[j] != NULL) {
+          printf("%s", argv[j]);
+          if (j < i) {
+            printf(" ");
+          }
+        }
+      }
+      
     } else if (strncmp(argv[0], "type", 4) == 0) {
       int flag = 0;
       for (int i = 0; i < 3; i++) {
