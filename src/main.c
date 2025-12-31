@@ -42,7 +42,14 @@ void parse_input(char *input, char **argv) {
                     arg[j++] = *p++; // Copy inside quotes literally
                 }
                 if (*p == '\'') p++; // Skip closing quote
-            } else {
+            } else if (*p == '\"') {
+                p++; // Skip opening double quote
+                while (*p != '\0' && *p != '\"') {
+                    arg[j++] = *p++; // Copy literally
+                }
+                if (*p == '\"') p++; // Skip closing double quote
+            }
+            else {
                 arg[j++] = *p++; // Normal character
             }
         }
