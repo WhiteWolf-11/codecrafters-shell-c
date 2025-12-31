@@ -4,132 +4,143 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-
-char *file_path(char *command,char *res, int *flag) {
-  char *path = getenv("PATH");
-  char *path_copy = strdup(path);
-  char *dir = strtok(path_copy, ":");
-  while (dir != NULL) {
-    snprintf(res, 1024, "%s/%s", dir, command);
-    if (access(res, X_OK) == 0) {
-      *flag = 1;
-      break;
+// Helper to find command in PATH
+char *file_path(char *command, char *res, int *flag) {
+    char *path = getenv("PATH");
+    if (!path) return NULL;
+    char *path_copy = strdup(path);
+    char *dir = strtok(path_copy, ":");
+    while (dir != NULL) {
+        snprintf(res, 1024, "%s/%s", dir, command);
+        if (access(res, X_OK) == 0) {
+            *flag = 1;
+            break;
+        }
+        dir = strtok(NULL, ":");
     }
-    dir = strtok(NULL, ":");
-  }
-
-  free(path_copy);
-  (*flag == 1) ? res : NULL;
-  return res;
+    free(path_copy);
+    return (*flag == 1) ? res : NULL;
 }
 
-
-int main() {
-  // Flush after every printf
-  setbuf(stdout, NULL);
-  char *argv[20];
-  char res[1024];
-  char *bltin[50] = {"exit", "echo", "type", "pwd", "cd"};
-
-  while (1) {
-    // TODO: Uncomment the code below to pass the first stage
-    printf("$ ");
-
-    // Wait for user input
-    char input[100];
-    if (fgets(input, 100, stdin) == NULL)
-      break;
+// Function to handle single quotes and spaces
+void parse_input(char *input, char **argv) {
     int i = 0;
+    char *p = input;
+    
+    while (*p != '\0') {
+        while (*p == ' ') p++; // Skip leading spaces
+        if (*p == '\0') break;
 
-    // Remove the trailing newline
-    input[strcspn(input, "\n")] = '\0';
-    char *token = strtok(input, " ");
+        char *arg = malloc(1024); 
+        int j = 0;
+        argv[i++] = arg;
 
-    while (token != NULL && i < 19) {
-      argv[i++] = token;
-      token = strtok(NULL, " ");
+        while (*p != '\0' && (*p != ' ' )) {
+            if (*p == '\'') {
+                p++; // Skip opening quote
+                while (*p != '\0' && *p != '\'') {
+                    arg[j++] = *p++; // Copy inside quotes literally
+                }
+                if (*p == '\'') p++; // Skip closing quote
+            } else {
+                arg[j++] = *p++; // Normal character
+            }
+        }
+        arg[j] = '\0';
     }
     argv[i] = NULL;
-    char *command = argv[0];
-    if (argv[0] == NULL)
-      continue;
+}
 
-    if (strcmp(argv[0], "exit") == 0) {
-      break;
-    } else if (strncmp(argv[0], "echo", 4) == 0) {
-      for(int j = 1; argv[j] != NULL; j++){
-        printf("%s%s", argv[j], (argv[j+1] == NULL) ? "" : " ");
-      }
-      printf("\n");
-      
-    } else if (strncmp(argv[0], "type", 4) == 0) {
-      int flag = 0;
-      for (int i = 0; i < 5; i++) {
-        if (strcmp(argv[1], bltin[i]) == 0) {
-          flag = 1;
-        }
-      };
-      if (flag == 1) {
-        printf("%s is a shell builtin\n", argv[1]);
-      } else {
-        char resolved_path[1024];
-        file_path(argv[1], res, &flag);
-        if (flag == 1) {
-          printf("%s is %s\n", argv[1], res);
-        } else {
-          printf("%s: not found\n", argv[1]);
-        }
-      }
-    } else if (strcmp(argv[0], "pwd") == 0 ){
-      char cwd[1024];
-      if (getcwd(cwd, sizeof(cwd)) != NULL){
-        printf("%s\n", cwd);
-      }else{
-        printf("Error retrieving current directory\n");
-      }
-      
-    }else if(strcmp(argv[0], "cd") == 0 ){
-      char *path = argv[1];
-      if (path == NULL || strcmp(path, "~") == 0) {
-        path = getenv("HOME");
-      }
-      if (chdir(path) == 0) {
-        char cwd[1024];
-        if (getcwd(cwd, sizeof(cwd)) != NULL) {
-          setenv("PWD", cwd, 1);
-        }
-      } else {
+int main() {
+    setbuf(stdout, NULL);
+    char *argv[20];
+    char res[1024];
+    char *bltin[] = {"exit", "echo", "type", "pwd", "cd"};
+
+    while (1) {
+        printf("$ ");
+
+        char input[100];
+        if (fgets(input, 100, stdin) == NULL) break;
+
+        input[strcspn(input, "\n")] = '\0';
         
-        printf("cd: no such file or directory: %s\n", path);
-      }
-      
-    }
-    else {
-      int found_executable = 0;
-      // Search for the command in PATH
-      file_path(argv[0], res, &found_executable);
+        // Use the new parser instead of strtok
+        parse_input(input, argv);
 
-      if (found_executable == 1) {
-        pid_t pid = fork();
-        if (pid == 0) {
-          // Child process: execute the found path with the original argv
-          if (execv(res, (char * const*)argv) == -1) {
-            perror("execv");
-            exit(1);
-          }
-        } else if (pid < 0) {
-          perror("fork");
-        } else {
-          // Parent process: wait for the command to finish
-          wait(NULL);
+        if (argv[0] == NULL) continue;
+
+        if (strcmp(argv[0], "exit") == 0) {
+            break;
+        } 
+        else if (strcmp(argv[0], "echo") == 0) {
+            for (int j = 1; argv[j] != NULL; j++) {
+                printf("%s%s", argv[j], (argv[j+1] == NULL) ? "" : " ");
+            }
+            printf("\n");
+        } 
+        else if (strcmp(argv[0], "type") == 0) {
+            int flag = 0;
+            for (int k = 0; k < 5; k++) {
+                if (argv[1] && strcmp(argv[1], bltin[k]) == 0) {
+                    flag = 1;
+                }
+            }
+            if (flag == 1) {
+                printf("%s is a shell builtin\n", argv[1]);
+            } else if (argv[1]) {
+                int found = 0;
+                file_path(argv[1], res, &found);
+                if (found) printf("%s is %s\n", argv[1], res);
+                else printf("%s: not found\n", argv[1]);
+            }
+        } 
+        else if (strcmp(argv[0], "pwd") == 0) {
+            char cwd[1024];
+            if (getcwd(cwd, sizeof(cwd))) printf("%s\n", cwd);
+        } 
+        else if (strcmp(argv[0], "cd") == 0) {
+            char *path = argv[1];
+            if (!path || strcmp(path, "~") == 0) path = getenv("HOME");
+            if (chdir(path) == 0) {
+                char cwd[1024];
+                if (getcwd(cwd, sizeof(cwd))) setenv("PWD", cwd, 1);
+            } else {
+                printf("cd: no such file or directory: %s\n", path);
+            }
+        } 
+        else {
+            // External Command Logic
+            int found_executable = 0;
+            char *full_path_to_run = NULL;
+            if (strchr(argv[0], '/') != NULL) {
+                if (access(argv[0], X_OK) == 0) {
+                    found_executable = 1;
+                    full_path_to_run = argv[0];
+                }
+            } else {
+                file_path(argv[0], res, &found_executable);
+                full_path_to_run = res;
+            }
+
+            if (found_executable) {
+                if (fork() == 0) {
+                    execv(full_path_to_run, argv);
+                    perror("execv");
+                    exit(1);
+                } else {
+                    wait(NULL);
+                }
+            } else {
+                printf("%s: command not found\n", argv[0]);
+            }
         }
-      } else {
-        // If not found, print ONLY the command name followed by : command not found
-        // The tester is very sensitive to spaces and extra characters!
-        printf("%s: command not found\n", argv[0]);
-      }
-    }
-  }
 
-  return 0;
+        // Clean up memory from parse_input
+        for (int k = 0; argv[k] != NULL; k++) {
+            free(argv[k]);
+            argv[k] = NULL;
+        }
+    }
+    return 0;
 }
