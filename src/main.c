@@ -36,7 +36,12 @@ void parse_input(char *input, char **argv) {
         argv[i++] = arg;
 
         while (*p != '\0' && (*p != ' ' )) {
-            if (*p == '\'') {
+          if (*p == '\\') {
+                p++; // Skip the backslash
+                if (*p != '\0') {
+                    arg[j++] = *p++; // Copy the next character literally
+                }
+            } else if (*p == '\'') {
                 p++; // Skip opening quote
                 while (*p != '\0' && *p != '\'') {
                     arg[j++] = *p++; // Copy inside quotes literally
