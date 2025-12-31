@@ -35,27 +35,39 @@ void parse_input(char *input, char **argv) {
         int j = 0;
         argv[i++] = arg;
 
-        while (*p != '\0' && (*p != ' ' )) {
-          if (*p == '\\') {
-                p++; // Skip the backslash
-                if (*p != '\0') {
-                    arg[j++] = *p++; // Copy the next character literally
-                }
-            } else if (*p == '\'') {
-                p++; // Skip opening quote
-                while (*p != '\0' && *p != '\'') {
-                    arg[j++] = *p++; // Copy inside quotes literally
-                }
-                if (*p == '\'') p++; // Skip closing quote
-            } else if (*p == '\"') {
-                p++; // Skip opening double quote
+        while (*p != '\0' && *p != ' ') {
+            if (*p == '\\') {
+                // Outside quotes: Always escape next character
+                p++; 
+                if (*p != '\0') arg[j++] = *p++;
+            } 
+            else if (*p == '\'') {
+                // Single Quotes: Everything is literal
+                p++; 
+                while (*p != '\0' && *p != '\'') arg[j++] = *p++;
+                if (*p == '\'') p++;
+            } 
+            else if (*p == '\"') {
+                // Double Quotes: Selective escaping
+                p++; 
                 while (*p != '\0' && *p != '\"') {
-                    arg[j++] = *p++; // Copy literally
+                    if (*p == '\\') {
+                        char next = *(p + 1);
+                        // Only escape if next is " or 
+                        if (next == '\"' || next == '\\' || next == '$') {
+                            p++; // Skip the backslash
+                            arg[j++] = *p++; // Copy the escaped char
+                        } else {
+                            arg[j++] = *p++; // Copy backslash literally
+                        }
+                    } else {
+                        arg[j++] = *p++;
+                    }
                 }
-                if (*p == '\"') p++; // Skip closing double quote
-            }
+                if (*p == '\"') p++;
+            } 
             else {
-                arg[j++] = *p++; // Normal character
+                arg[j++] = *p++;
             }
         }
         arg[j] = '\0';
