@@ -108,8 +108,8 @@ int main() {
     
         for (int k = 0; argv[k]!= NULL; k++){
             char *arg = argv[k];
-            if(strchr(arg, ">") != NULL){
-                target_fd = (arg[0] == "2") ? 2 : 1; // Determine target fd
+            if(strchr(arg, '>') != NULL){
+                target_fd = (arg[0] == '2') ? 2 : 1; // Determine target fd
                 int flags = O_WRONLY | O_CREAT | (strstr(arg, ">>") ? O_APPEND : O_TRUNC);
                 if (argv[k+1]!= NULL){
                    redirect_idx = k;
