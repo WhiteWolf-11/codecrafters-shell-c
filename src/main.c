@@ -76,6 +76,14 @@ void parse_input(char *input, char **argv) {
     argv[i] = NULL;
 }
 
+int get_redirect_type(char *arg) {
+    if (strcmp(arg, ">") == 0 || strcmp(arg, "1>") == 0) return 1;  // Stdout Truncate
+    if (strcmp(arg, "2>") == 0) return 2;                         // Stderr Truncate
+    if (strcmp(arg, ">>") == 0 || strcmp(arg, "1>>") == 0) return 3; // Stdout Append
+    if (strcmp(arg, "2>>") == 0) return 4;                        // Stderr Append
+    return 0; // Not a redirection
+}
+
 int main() {
     setbuf(stdout, NULL);
     char *argv[20];
@@ -87,9 +95,9 @@ int main() {
     while (1) {
 
         printf("$ ");
-        char input[100];
+        char input[1024];
 
-        if (fgets(input, 100, stdin) == NULL) break;
+        if (fgets(input, 1024, stdin) == NULL) break;
 
         input[strcspn(input, "\n")] = '\0';
         parse_input(input, argv);
@@ -97,16 +105,15 @@ int main() {
 
         int fd = -1;
         int redirect_idx = -1;
+    
         for (int k = 0; argv[k]!= NULL; k++){
-            if(strcmp(argv[k], ">") == 0 || strcmp(argv[k], "1>") == 0 || strcmp(argv[k], "2>")== 0){
-                if(strcmp(argv[k], "2>")== 0){
-                    target_fd = 2;
-                }else{
-                    target_fd = 1;
-                }
+            char *arg = argv[k];
+            if(strchr(arg, ">") != NULL){
+                target_fd = (arg[0] == "2") ? 2 : 1; // Determine target fd
+                int flags = O_WRONLY | O_CREAT | (strstr(arg, ">>") ? O_APPEND : O_TRUNC);
                 if (argv[k+1]!= NULL){
                    redirect_idx = k;
-                   fd = open(argv[k+1], O_CREAT | O_WRONLY | O_TRUNC, 0644);
+                   fd = open(argv[k+1], flags, 0644);
                    argv[k] = NULL;
                    break;
                 }
