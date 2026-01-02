@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 // Helper to find command in PATH
 char *file_path(char *command, char *res, int *flag) {
@@ -80,49 +81,39 @@ int main() {
     char *argv[20];
     char res[1024];
     char *bltin[] = {"exit", "echo", "type", "pwd", "cd"};
+    
 
     while (1) {
-        printf("$ ");
 
+        printf("$ ");
         char input[100];
+
         if (fgets(input, 100, stdin) == NULL) break;
 
         input[strcspn(input, "\n")] = '\0';
-        
-        // Use the new parser instead of strtok
         parse_input(input, argv);
-
         if (argv[0] == NULL) continue;
 
-        if (strcmp(argv[0], "exit") == 0) {
-            break;
-        } 
-        else if (strcmp(argv[0], "echo") == 0) {
-            for (int j = 1; argv[j] != NULL; j++) {
-                printf("%s%s", argv[j], (argv[j+1] == NULL) ? "" : " ");
-            }
-            printf("\n");
-        } 
-        else if (strcmp(argv[0], "type") == 0) {
-            int flag = 0;
-            for (int k = 0; k < 5; k++) {
-                if (argv[1] && strcmp(argv[1], bltin[k]) == 0) {
-                    flag = 1;
+        int fd = -1;
+        int redirect_idx = -1;
+        for (int k = 0; argv[k]!= NULL; k++){
+            if(strcmp(argv[k], ">") == 0 || strcmp(argv[k], "1>") == 0){
+                if (argv[k+1]!= NULL){
+                   redirect_idx = k;
+                   fd = open(argv[k+1], O_CREAT | O_WRONLY | O_TRUNC, 0644);
+                   argv[k] = NULL;
+                   break;
                 }
             }
-            if (flag == 1) {
-                printf("%s is a shell builtin\n", argv[1]);
-            } else if (argv[1]) {
-                int found = 0;
-                file_path(argv[1], res, &found);
-                if (found) printf("%s is %s\n", argv[1], res);
-                else printf("%s: not found\n", argv[1]);
+        }
+
+        if (strcmp(argv[0], "exit") == 0) {
+            if(fd != -1) close(fd);
+            for(int k = 0; argv[k] != NULL; k++) {
+                free(argv[k]);
             }
-        } 
-        else if (strcmp(argv[0], "pwd") == 0) {
-            char cwd[1024];
-            if (getcwd(cwd, sizeof(cwd))) printf("%s\n", cwd);
-        } 
+            break;
+        }
         else if (strcmp(argv[0], "cd") == 0) {
             char *path = argv[1];
             if (!path || strcmp(path, "~") == 0) path = getenv("HOME");
@@ -132,35 +123,70 @@ int main() {
             } else {
                 printf("cd: no such file or directory: %s\n", path);
             }
-        } 
-        else {
-            // External Command Logic
-            int found_executable = 0;
-            char *full_path_to_run = NULL;
-            if (strchr(argv[0], '/') != NULL) {
-                if (access(argv[0], X_OK) == 0) {
-                    found_executable = 1;
-                    full_path_to_run = argv[0];
+            if (fd != -1) close(fd);
+        }  
+        else{
+            pid_t pid = fork();
+            if (pid == 0) {
+                if (fd != -1) {
+                    dup2(fd, 1);
+                    close(fd);
                 }
-            } else {
-                file_path(argv[0], res, &found_executable);
-                full_path_to_run = res;
-            }
+                // Execute other commands in child process
+                if (strcmp(argv[0], "echo") == 0) {
+                    for (int j = 1; argv[j] != NULL; j++) {
+                        printf("%s%s", argv[j], (argv[j+1] == NULL) ? "" : " ");
+                    }
+                    printf("\n");
+                    exit(0);
+                } 
+                else if (strcmp(argv[0], "type") == 0) {
+                    int flag = 0;
+                    for (int k = 0; k < 5; k++) {
+                        if (argv[1] && strcmp(argv[1], bltin[k]) == 0) {
+                            flag = 1;
+                        }
+                    }
+                    if (flag == 1) {
+                        printf("%s is a shell builtin\n", argv[1]);
+                    } else if (argv[1]) {
+                        int found = 0;
+                        file_path(argv[1], res, &found);
+                        if (found) printf("%s is %s\n", argv[1], res);
+                        else printf("%s: not found\n", argv[1]);
+                    }
+                    exit(0);
+                } 
+                else if (strcmp(argv[0], "pwd") == 0) {
+                    char cwd[1024];
+                    if (getcwd(cwd, sizeof(cwd))) printf("%s\n", cwd);
+                    exit(0);
+                } 
+                else {
+                    // EXTERNAL COMMANDS (ls, cat, etc.)
+                    int found = 0;
+                    char *path = NULL;
+                    if (strchr(argv[0], '/') != NULL) {
+                        if (access(argv[0], X_OK) == 0) { found = 1; path = argv[0]; }
+                    } else {
+                        path = file_path(argv[0], res, &found);
+                    }
 
-            if (found_executable) {
-                if (fork() == 0) {
-                    execv(full_path_to_run, argv);
-                    perror("execv");
-                    exit(1);
-                } else {
-                    wait(NULL);
+                    if (found) {
+                        execv(path, argv);
+                        perror("execv"); // Only runs if execv fails
+                    } else {
+                        fprintf(stderr, "%s: command not found\n", argv[0]);
+                    }
+                    exit(found ? 0 : 1);
                 }
-            } else {
-                printf("%s: command not found\n", argv[0]);
+            } else { // PARENT
+                if (fd != -1) close(fd);
+                wait(NULL);
             }
         }
 
-        // Clean up memory from parse_input
+        // Cleanup argv memory
         for (int k = 0; argv[k] != NULL; k++) {
             free(argv[k]);
             argv[k] = NULL;
