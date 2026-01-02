@@ -100,9 +100,9 @@ int main() {
         for (int k = 0; argv[k]!= NULL; k++){
             if(strcmp(argv[k], ">") == 0 || strcmp(argv[k], "1>") == 0 || strcmp(argv[k], "2>")== 0){
                 if(strcmp(argv[k], "2>")== 0){
-                    int redirect = 2;
+                    target_fd = 2;
                 }else{
-                    int redirect = 1;
+                    target_fd = 1;
                 }
                 if (argv[k+1]!= NULL){
                    redirect_idx = k;
@@ -135,7 +135,7 @@ int main() {
             pid_t pid = fork();
             if (pid == 0) {
                 if (fd != -1) {
-                    dup2(fd, redirect);
+                    dup2(fd, target_fd);
                     close(fd);
                 }
                 // Execute other commands in child process
