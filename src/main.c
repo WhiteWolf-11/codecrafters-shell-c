@@ -81,6 +81,7 @@ int main() {
     char *argv[20];
     char res[1024];
     char *bltin[] = {"exit", "echo", "type", "pwd", "cd"};
+    int target_fd = 1;
     
 
     while (1) {
@@ -97,7 +98,12 @@ int main() {
         int fd = -1;
         int redirect_idx = -1;
         for (int k = 0; argv[k]!= NULL; k++){
-            if(strcmp(argv[k], ">") == 0 || strcmp(argv[k], "1>") == 0){
+            if(strcmp(argv[k], ">") == 0 || strcmp(argv[k], "1>") == 0 || strcmp(argv[k], "2>")== 0){
+                if(strcmp(argv[k], "2>")== 0){
+                    int redirect = 2;
+                }else{
+                    int redirect = 1;
+                }
                 if (argv[k+1]!= NULL){
                    redirect_idx = k;
                    fd = open(argv[k+1], O_CREAT | O_WRONLY | O_TRUNC, 0644);
@@ -121,7 +127,7 @@ int main() {
                 char cwd[1024];
                 if (getcwd(cwd, sizeof(cwd))) setenv("PWD", cwd, 1);
             } else {
-                printf("cd: no such file or directory: %s\n", path);
+                fprintf(stderr, "cd: no such file or directory: %s\n", path);
             }
             if (fd != -1) close(fd);
         }  
@@ -129,7 +135,7 @@ int main() {
             pid_t pid = fork();
             if (pid == 0) {
                 if (fd != -1) {
-                    dup2(fd, 1);
+                    dup2(fd, redirect);
                     close(fd);
                 }
                 // Execute other commands in child process
@@ -153,7 +159,7 @@ int main() {
                         int found = 0;
                         file_path(argv[1], res, &found);
                         if (found) printf("%s is %s\n", argv[1], res);
-                        else printf("%s: not found\n", argv[1]);
+                        else fprintf(stderr, "%s: not found\n", argv[1]);
                     }
                     exit(0);
                 } 
