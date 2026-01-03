@@ -117,7 +117,7 @@ int main() {
         enable_raw_mode();
         while(1){
             char c;
-            if(read(STDIN_FILNO, &c, 1) != 1) break;
+            if(read(STDIN_FILENO, &c, 1) != 1) break;
             if(c == '\n'){
                 printf("\n");
                 break;
