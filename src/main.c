@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <termios.h>
 
 // Helper to find command in PATH
 char *file_path(char *command, char *res, int *flag) {
