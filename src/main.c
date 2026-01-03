@@ -124,8 +124,16 @@ int main() {
             }else if (c == '\t'){
                 for(int i = 0; i < 2; i++){
                     if(pos > 0 && strncmp(autocomplete_targets[i], input, pos) == 0){
-                        printf("%s\n", &autocomplete_targets[i][pos]);
-                        strcpy(&input[pos], &autocomplete_targets[i][pos]);
+                        // 1. Calculate the part we haven't typed yet
+                        char *completion = &autocomplete_targets[i][pos];
+                        
+                        // 2. Print it (this includes the trailing space)
+                        printf("%s", completion);
+                        
+                        // 3. Copy it into our input buffer
+                        strcat(input, completion);
+                        
+                        // 4. Update pos to the new length
                         pos = strlen(input);
                         break;
                     }
