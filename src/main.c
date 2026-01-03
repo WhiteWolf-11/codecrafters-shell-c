@@ -84,20 +84,66 @@ int get_redirect_type(char *arg) {
     return 0; // Not a redirection
 }
 
+struct termios original_termios;
+
+void disable_raw_mode(){
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_termios);
+}
+
+void enable_raw_mode(){
+    tcgetattr(STDIN_FILENO, &original_termios);
+    atexit(disable_raw_mode);
+    struct termios raw = original_termios;
+    raw.c_lflag &= ~(ECHO | ICANON);
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
 int main() {
     setbuf(stdout, NULL);
     char *argv[20];
     char res[1024];
     char *bltin[] = {"exit", "echo", "type", "pwd", "cd"};
     int target_fd = 1;
+    char *autocomplete_targets[] = {"echo ", "exit "};
     
 
     while (1) {
 
         printf("$ ");
         char input[1024];
+        int pos = 0;
 
-        if (fgets(input, 1024, stdin) == NULL) break;
+        enable_raw_mode();
+        while(1){
+            char c;
+            if(read(STDIN_FILNO, &c, 1) != 1) break;
+            if(c == '\n'){
+                printf("\n");
+                break;
+            }else if (c == '\t'){
+                for(int i = 0; i < 2; i++){
+                    if(pos > 0 && strncmp(autocomplete_targets[i], input, pos) == 0){
+                        printf("%s\n", &autocomplete_targets[i][pos]);
+                        strcpy(&input[pos], &autocomplete_targets[i][pos]);
+                        pos = strlen(input);
+                        break;
+                    }
+
+                }
+            }else if(c == 127){ // Backspace
+                if(pos > 0){
+                    pos--;
+                    input[pos] = '\0';
+                    printf("\b \b");
+                }
+        }else{
+                input[pos++] = c;
+                input[pos] = '\0';
+                printf("%c", c);
+            }
+            fflush(stdout);
+        }
+        disable_raw_mode();
 
         input[strcspn(input, "\n")] = '\0';
         parse_input(input, argv);
