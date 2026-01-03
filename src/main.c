@@ -139,6 +139,9 @@ int main() {
                     }
 
                 }
+                if(i == 2){
+                    printf("\a"); // Bell sound for no match
+                }
             }else if(c == 127){ // Backspace
                 if(pos > 0){
                     pos--;
