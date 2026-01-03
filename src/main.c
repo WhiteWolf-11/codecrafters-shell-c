@@ -117,12 +117,13 @@ int main() {
         enable_raw_mode();
         while(1){
             char c;
+            int i;
             if(read(STDIN_FILENO, &c, 1) != 1) break;
             if(c == '\n'){
                 printf("\n");
                 break;
             }else if (c == '\t'){
-                for(int i = 0; i < 2; i++){
+                for(i = 0; i < 2; i++){
                     if(pos > 0 && strncmp(autocomplete_targets[i], input, pos) == 0){
                         // 1. Calculate the part we haven't typed yet
                         char *completion = &autocomplete_targets[i][pos];
